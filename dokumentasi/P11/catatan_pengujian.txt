@@ -1,0 +1,87 @@
+LAPORAN PENGUJIAN APLIKASI - PBO PERTEMUAN 11
+Topik     : Menu, Navigasi, Login, dan Integrasi Modul
+Mahasiswa : M. Atas Romadon
+NIM       : 2924033
+Aplikasi  : SIKURSUS Desktop
+
+----------------------------------------------------------------------
+A. PENGUJIAN AUTENTIKASI DAN HAK AKSES (ROLE)
+----------------------------------------------------------------------
+1. Kode Uji     : T01
+   Skenario     : Menekan tombol login saat username dan password kosong.
+   Hasil Aktual : Aplikasi menolak proses masuk dan memunculkan dialog
+                  peringatan bahwa username dan password harus diisi.
+   Kesimpulan   : Berhasil
+
+2. Kode Uji     : T02
+   Skenario     : Memasukkan username valid dengan password yang keliru.
+   Hasil Aktual : Autentikasi ditolak, muncul notifikasi login gagal,
+                  dan isian password langsung dibersihkan.
+   Kesimpulan   : Berhasil
+
+3. Kode Uji     : T03
+   Skenario     : Masuk menggunakan akun admin (Admin@123).
+   Hasil Aktual : Jendela Dashboard tampil dengan info admin (ADMIN) dan
+                  seluruh menu Master dapat dibuka tanpa batasan.
+   Kesimpulan   : Berhasil
+
+4. Kode Uji     : T04
+   Skenario     : Masuk menggunakan akun operator (Operator@123).
+   Hasil Aktual : Dashboard tampil dengan status OPERATOR; hanya Data
+                  Peserta yang aktif, sedangkan Instruktur, Kursus, dan
+                  Kelas dalam kondisi nonaktif/terkunci.
+   Kesimpulan   : Berhasil
+
+----------------------------------------------------------------------
+B. PENGUJIAN NAVIGASI DAN PENGENDALIAN JENDELA
+----------------------------------------------------------------------
+5. Kode Uji     : T05
+   Skenario     : Memilih menu Data Peserta berulang kali (5 kali).
+   Hasil Aktual : Tidak muncul jendela ganda; WindowManager hanya
+                  memfokuskan satu jendela PesertaFrame yang sudah aktif.
+   Kesimpulan   : Berhasil
+
+6. Kode Uji     : T06
+   Skenario     : Menutup jendela PesertaFrame lewat tombol silang (X).
+   Hasil Aktual : Hanya form Peserta yang tertutup (DISPOSE_ON_CLOSE),
+                  sementara Dashboard utama tetap berjalan normal.
+   Kesimpulan   : Berhasil
+
+7. Kode Uji     : T07
+   Skenario     : Membuka kembali Data Peserta setelah sempat ditutup.
+   Hasil Aktual : Sistem membentuk ulang instance PesertaFrame dan
+                  menampilkannya kembali dengan lancar.
+   Kesimpulan   : Berhasil
+
+8. Kode Uji     : T08
+   Skenario     : Membuka form Kursus, Instruktur, dan Kelas sebagai ADMIN.
+   Hasil Aktual : Masing-masing form child terbuka dengan baik dan
+                  Dashboard tetap aktif di belakangnya.
+   Kesimpulan   : Berhasil
+
+9. Kode Uji     : T09
+   Skenario     : Melakukan Logout saat beberapa form child masih terbuka.
+   Hasil Aktual : Setelah konfirmasi Yes, seluruh form child ditutup
+                  otomatis, sesi dibersihkan, dan LoginFrame muncul lagi.
+   Kesimpulan   : Berhasil
+
+----------------------------------------------------------------------
+C. PENGUJIAN KONEKSI, RESOURCE IKON, DAN PENUTUPAN APLIKASI
+----------------------------------------------------------------------
+10. Kode Uji     : T10
+    Skenario     : Menghentikan service MySQL lalu mencoba login.
+    Hasil Aktual : Aplikasi tidak crash dan menampilkan pesan kesalahan
+                   koneksi database secara jelas.
+    Kesimpulan   : Berhasil
+
+11. Kode Uji     : T11
+    Skenario     : Memindahkan folder project ke direktori lain.
+    Hasil Aktual : Ikon pada menu tetap tampil karena dimuat dari
+                   resource internal project (src/main/resources/icons).
+    Kesimpulan   : Berhasil
+
+12. Kode Uji     : T12
+    Skenario     : Memilih menu Tutup Aplikasi pada Dashboard.
+    Hasil Aktual : Muncul dialog konfirmasi keluar dan aplikasi berhenti
+                   sepenuhnya ketika dipilih Yes.
+    Kesimpulan   : Berhasil
