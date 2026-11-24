@@ -1,7 +1,9 @@
 package view;
 
+import dao.PesertaDAO;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -12,6 +14,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.sql.SQLException;
+import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -23,11 +27,12 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.RowFilter;
 import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
-import javax.swing.table.TableRowSorter;
+import model.Peserta;
+import report.ReportService;
 import util.ThemeBurgundy;
 
 /**
@@ -53,12 +58,12 @@ public class PesertaFrame extends JFrame {
 
     private JTable tblPeserta;
     private DefaultTableModel tableModel;
-    private TableRowSorter<DefaultTableModel> rowSorter;
-    private int nextId = 6;
+    private final PesertaDAO pesertaDAO = new PesertaDAO();
+    private int selectedIdPeserta = -1;
 
     public PesertaFrame() {
         initComponents();
-        loadSampleData();
+        loadDataPeserta();
     }
 
     private void initComponents() {
@@ -142,7 +147,7 @@ public class PesertaFrame extends JFrame {
         btnUbah = createActionBtn("Ubah", false);
         btnHapus = createActionBtn("Hapus", false);
         btnReset = createActionBtn("Reset", false);
-        btnCetak = createActionBtn("Cetak Semua", false);
+        btnCetak = createActionBtn("Cetak", false);
 
         btnPanel.add(btnSimpan);
         btnPanel.add(btnUbah);
@@ -201,12 +206,26 @@ public class PesertaFrame extends JFrame {
         tblPeserta.setGridColor(ThemeBurgundy.BORDER_LIGHT);
 
         JTableHeader tblHeader = tblPeserta.getTableHeader();
+        tblHeader.setOpaque(true);
         tblHeader.setBackground(ThemeBurgundy.BURGUNDY_PRIMARY);
         tblHeader.setForeground(Color.WHITE);
         tblHeader.setFont(ThemeBurgundy.FONT_BODY_BOLD);
-
-        rowSorter = new TableRowSorter<DefaultTableModel>(tableModel);
-        tblPeserta.setRowSorter(rowSorter);
+        tblHeader.setDefaultRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int column) {
+                JLabel lbl = (JLabel) super.getTableCellRendererComponent(
+                        table, value, isSelected, hasFocus, row, column);
+                lbl.setOpaque(true);
+                lbl.setBackground(ThemeBurgundy.BURGUNDY_PRIMARY);
+                lbl.setForeground(Color.WHITE);
+                lbl.setFont(ThemeBurgundy.FONT_BODY_BOLD);
+                lbl.setHorizontalAlignment(SwingConstants.CENTER);
+                lbl.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 1, Color.WHITE));
+                return lbl;
+            }
+        });
 
         JScrollPane scrollPane = new JScrollPane(tblPeserta);
         scrollPane.setPreferredSize(new Dimension(640, 200));
@@ -246,7 +265,7 @@ public class PesertaFrame extends JFrame {
         return btn;
     }
 
-    private void addFormRow(JPanel panel, GridBagConstraints gbc, int row, String label, java.awt.Component comp) {
+    private void addFormRow(JPanel panel, GridBagConstraints gbc, int row, String label, Component comp) {
         gbc.gridx = 0;
         gbc.gridy = row;
         gbc.weightx = 0.25;
@@ -260,29 +279,54 @@ public class PesertaFrame extends JFrame {
         panel.add(comp, gbc);
     }
 
-    private void loadSampleData() {
-        tableModel.addRow(new Object[]{1, "252001", "Ahmad Fauzan", "L", "Informatika", "081234567801", "ahmad@example.com"});
-        tableModel.addRow(new Object[]{2, "252002", "Siti Rahmah", "P", "Informatika", "081234567802", "siti@example.com"});
+    private void loadDataPeserta() {
+        try {
+            List<Peserta> list = pesertaDAO.getAll();
+            tampilkanKeTabel(list);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Gagal memuat data peserta dari database: " + ex.getMessage(),
+                    "Error Database",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
+    private void tampilkanKeTabel(List<Peserta> list) {
+        tableModel.setRowCount(0);
+        for (Peserta p : list) {
+            tableModel.addRow(new Object[]{
+                p.getIdPeserta(),
+                p.getNim(),
+                p.getNama(),
+                p.getJenisKelamin(),
+                p.getProdi(),
+                p.getNoHp(),
+                p.getEmail()
+            });
+        }
     }
 
     private void wireEvents() {
         tblPeserta.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                int viewRow = tblPeserta.getSelectedRow();
-                if (viewRow >= 0) {
-                    int modelRow = tblPeserta.convertRowIndexToModel(viewRow);
-                    txtNim.setText(String.valueOf(tableModel.getValueAt(modelRow, 1)));
-                    txtNama.setText(String.valueOf(tableModel.getValueAt(modelRow, 2)));
-                    String jk = String.valueOf(tableModel.getValueAt(modelRow, 3));
+                int row = tblPeserta.getSelectedRow();
+                if (row >= 0) {
+                    selectedIdPeserta = Integer.parseInt(String.valueOf(tableModel.getValueAt(row, 0)));
+                    txtNim.setText(String.valueOf(tableModel.getValueAt(row, 1)));
+                    txtNama.setText(String.valueOf(tableModel.getValueAt(row, 2)));
+                    String jk = String.valueOf(tableModel.getValueAt(row, 3));
                     if ("L".equalsIgnoreCase(jk)) {
                         rbLaki.setSelected(true);
                     } else {
                         rbPerempuan.setSelected(true);
                     }
-                    txtProdi.setText(String.valueOf(tableModel.getValueAt(modelRow, 4)));
-                    txtNoHp.setText(String.valueOf(tableModel.getValueAt(modelRow, 5)));
-                    txtEmail.setText(String.valueOf(tableModel.getValueAt(modelRow, 6)));
+                    txtProdi.setText(String.valueOf(tableModel.getValueAt(row, 4)));
+                    txtNoHp.setText(String.valueOf(tableModel.getValueAt(row, 5)));
+                    txtEmail.setText(String.valueOf(tableModel.getValueAt(row, 6)));
                 }
             }
         });
@@ -295,50 +339,82 @@ public class PesertaFrame extends JFrame {
                     return;
                 }
                 String jk = rbLaki.isSelected() ? "L" : "P";
-                tableModel.addRow(new Object[]{
-                    nextId++,
-                    txtNim.getText().trim(),
-                    txtNama.getText().trim(),
-                    jk,
-                    txtProdi.getText().trim(),
-                    txtNoHp.getText().trim(),
-                    txtEmail.getText().trim()
-                });
-                resetForm();
+                Peserta p = new Peserta(
+                        txtNim.getText().trim(),
+                        txtNama.getText().trim(),
+                        jk,
+                        txtProdi.getText().trim(),
+                        txtNoHp.getText().trim(),
+                        txtEmail.getText().trim()
+                );
+                try {
+                    if (pesertaDAO.insert(p)) {
+                        JOptionPane.showMessageDialog(PesertaFrame.this, "Data peserta berhasil disimpan.");
+                        loadDataPeserta();
+                        resetForm();
+                    }
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(PesertaFrame.this, "Gagal menyimpan data: " + ex.getMessage());
+                }
             }
         });
 
         btnUbah.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int viewRow = tblPeserta.getSelectedRow();
-                if (viewRow < 0) {
+                if (selectedIdPeserta <= 0) {
                     JOptionPane.showMessageDialog(PesertaFrame.this, "Pilih baris peserta terlebih dahulu.");
                     return;
                 }
-                int modelRow = tblPeserta.convertRowIndexToModel(viewRow);
                 String jk = rbLaki.isSelected() ? "L" : "P";
-                tableModel.setValueAt(txtNim.getText().trim(), modelRow, 1);
-                tableModel.setValueAt(txtNama.getText().trim(), modelRow, 2);
-                tableModel.setValueAt(jk, modelRow, 3);
-                tableModel.setValueAt(txtProdi.getText().trim(), modelRow, 4);
-                tableModel.setValueAt(txtNoHp.getText().trim(), modelRow, 5);
-                tableModel.setValueAt(txtEmail.getText().trim(), modelRow, 6);
-                resetForm();
+                Peserta p = new Peserta(
+                        selectedIdPeserta,
+                        txtNama.getText().trim(),
+                        txtNoHp.getText().trim(),
+                        txtNim.getText().trim(),
+                        jk,
+                        txtProdi.getText().trim(),
+                        txtEmail.getText().trim()
+                );
+                try {
+                    if (pesertaDAO.update(p)) {
+                        JOptionPane.showMessageDialog(PesertaFrame.this, "Data peserta berhasil diubah.");
+                        loadDataPeserta();
+                        resetForm();
+                    }
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(PesertaFrame.this, "Gagal mengubah data: " + ex.getMessage());
+                }
             }
         });
 
         btnHapus.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int viewRow = tblPeserta.getSelectedRow();
-                if (viewRow < 0) {
+                if (selectedIdPeserta <= 0) {
                     JOptionPane.showMessageDialog(PesertaFrame.this, "Pilih baris yang ingin dihapus.");
                     return;
                 }
-                int modelRow = tblPeserta.convertRowIndexToModel(viewRow);
-                tableModel.removeRow(modelRow);
-                resetForm();
+                int konfirmasi = JOptionPane.showConfirmDialog(
+                        PesertaFrame.this,
+                        "Yakin ingin menghapus data peserta ini?",
+                        "Konfirmasi Hapus",
+                        JOptionPane.YES_NO_OPTION
+                );
+                if (konfirmasi == JOptionPane.YES_OPTION) {
+                    try {
+                        if (pesertaDAO.delete(selectedIdPeserta)) {
+                            JOptionPane.showMessageDialog(PesertaFrame.this, "Data peserta berhasil dihapus.");
+                            loadDataPeserta();
+                            resetForm();
+                        }
+                    } catch (SQLException ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(PesertaFrame.this, "Gagal menghapus data: " + ex.getMessage());
+                    }
+                }
             }
         });
 
@@ -346,6 +422,7 @@ public class PesertaFrame extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 resetForm();
+                loadDataPeserta();
             }
         });
 
@@ -353,10 +430,15 @@ public class PesertaFrame extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String query = txtCari.getText().trim();
-                if (query.isEmpty()) {
-                    rowSorter.setRowFilter(null);
-                } else {
-                    rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + query));
+                try {
+                    if (query.isEmpty()) {
+                        loadDataPeserta();
+                    } else {
+                        tampilkanKeTabel(pesertaDAO.search(query));
+                    }
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(PesertaFrame.this, "Gagal mencari data: " + ex.getMessage());
                 }
             }
         });
@@ -364,22 +446,20 @@ public class PesertaFrame extends JFrame {
         btnCetak.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                try {
-                    tblPeserta.print();
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(PesertaFrame.this, "Gagal mencetak: " + ex.getMessage());
-                }
+                ReportService.tampilkanLaporanPeserta();
             }
         });
     }
 
     private void resetForm() {
+        selectedIdPeserta = -1;
         txtNim.setText("");
         txtNama.setText("");
         rbLaki.setSelected(true);
         txtProdi.setText("");
         txtNoHp.setText("");
         txtEmail.setText("");
+        txtCari.setText("");
         tblPeserta.clearSelection();
     }
 }
